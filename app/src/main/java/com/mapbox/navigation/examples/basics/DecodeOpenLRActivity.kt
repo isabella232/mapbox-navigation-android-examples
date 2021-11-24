@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Base64
 import androidx.appcompat.app.AppCompatActivity
+import com.mapbox.api.directions.v5.models.Bearing
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.geojson.Point
@@ -171,17 +172,23 @@ class DecodeOpenLRActivity : AppCompatActivity() {
         val openlr = "CwmQ9SVWJS2qBAD9/14tCQ=="
         val binaryDecoder = OpenLRBinaryDecoder()
         val byteArray = ByteArray(Base64.decode(openlr, Base64.DEFAULT))
-        val locationReferenceBinary = LocationReferenceBinaryImpl("Test location", byteArray)
+        val locationReferenceBinary = LocationReferenceBinaryImpl("", byteArray)
         val rawLocationReference = binaryDecoder.decodeData(locationReferenceBinary)
 
-        val points =
-            rawLocationReference.locationReferencePoints.map { Point.fromLngLat(it.longitudeDeg, it.latitudeDeg) }
+        val referencePoints = rawLocationReference.locationReferencePoints
+        val points = referencePoints.map {
+            Point.fromLngLat(it.longitudeDeg, it.latitudeDeg)
+        }
+        val bearings = referencePoints.map {
+            Bearing.builder().angle(it.bearing).degrees(10.0).build()
+        }
 
         mapboxNavigation.requestRoutes(
             RouteOptions.builder()
                 .applyDefaultNavigationOptions()
                 .applyLanguageAndVoiceUnitOptions(this)
                 .coordinatesList(points)
+                .bearingsList(bearings)
                 .build(),
             object : RouterCallback {
                 override fun onRoutesReady(
