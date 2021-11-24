@@ -189,6 +189,7 @@ class DecodeOpenLRActivity : AppCompatActivity() {
                     routerOrigin: RouterOrigin
                 ) {
                     mapboxNavigation.setRoutes(routes)
+                    navigationCamera.requestNavigationCameraToOverview()
                 }
 
                 override fun onFailure(
