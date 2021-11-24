@@ -72,6 +72,11 @@
         android:screenOrientation="portrait"
         android:exported="false"
         />
+
+    <activity android:name=".basics.DecodeOpenLRActivity"
+        android:screenOrientation="portrait"
+        android:exported="false"
+        />
   </application>
 
 </manifest>

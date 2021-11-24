@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.mapbox.android.core.permissions.PermissionsListener
 import com.mapbox.android.core.permissions.PermissionsManager
 import com.mapbox.android.core.permissions.PermissionsManager.areLocationPermissionsGranted
+import com.mapbox.navigation.examples.basics.DecodeOpenLRActivity
 import com.mapbox.navigation.examples.basics.FetchARouteActivity
 import com.mapbox.navigation.examples.basics.MultipleWaypointsActivity
 import com.mapbox.navigation.examples.basics.PlayVoiceInstructionsActivity
@@ -107,6 +108,12 @@ class MainActivity : AppCompatActivity(), PermissionsListener {
 
     private fun buildExamplesList(): List<MapboxExample> {
         return listOf(
+            MapboxExample(
+                ContextCompat.getDrawable(this, R.drawable.mapbox_screenshot_multiple_waypoints),
+                "Decode Open LR",
+                "TBT",
+                DecodeOpenLRActivity::class.java
+            ),
             MapboxExample(
                 ContextCompat.getDrawable(this, R.drawable.mapbox_ic_user_current_location),
                 getString(R.string.title_current_location),
