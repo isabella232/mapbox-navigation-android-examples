@@ -1,21 +1,16 @@
 package com.mapbox.navigation.examples.basics
 
 import android.annotation.SuppressLint
-import android.location.Location
 import android.os.Bundle
-import android.util.Log
+import android.util.Base64
 import androidx.appcompat.app.AppCompatActivity
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.geojson.Point
-import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.MapboxMap
 import com.mapbox.maps.Style
-import com.mapbox.maps.plugin.animation.MapAnimationOptions
 import com.mapbox.maps.plugin.animation.camera
-import com.mapbox.maps.plugin.gestures.gestures
-import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.navigation.base.ExperimentalPreviewMapboxNavigationAPI
 import com.mapbox.navigation.base.extensions.applyDefaultNavigationOptions
 import com.mapbox.navigation.base.extensions.applyLanguageAndVoiceUnitOptions
@@ -26,20 +21,17 @@ import com.mapbox.navigation.base.route.RouterOrigin
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.directions.session.RoutesObserver
-import com.mapbox.navigation.core.formatter.MapboxDistanceFormatter
-import com.mapbox.navigation.core.trip.session.LocationMatcherResult
-import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.examples.R
-import com.mapbox.navigation.examples.databinding.MapboxActivityMultipleWaypointsBinding
 import com.mapbox.navigation.examples.databinding.MapboxActivityOpenLrBinding
-import com.mapbox.navigation.ui.maneuver.api.MapboxManeuverApi
 import com.mapbox.navigation.ui.maps.camera.NavigationCamera
 import com.mapbox.navigation.ui.maps.camera.data.MapboxNavigationViewportDataSource
-import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
 import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineApi
 import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineView
 import com.mapbox.navigation.ui.maps.route.line.model.MapboxRouteLineOptions
 import com.mapbox.navigation.ui.maps.route.line.model.RouteLine
+import openlr.binary.ByteArray
+import openlr.binary.OpenLRBinaryDecoder
+import openlr.binary.impl.LocationReferenceBinaryImpl
 
 @OptIn(ExperimentalPreviewMapboxNavigationAPI::class)
 class DecodeOpenLRActivity : AppCompatActivity() {
@@ -116,7 +108,6 @@ class DecodeOpenLRActivity : AppCompatActivity() {
         }
     }
 
-
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -177,6 +168,40 @@ class DecodeOpenLRActivity : AppCompatActivity() {
     }
 
     private fun decodeRoute() {
+        val openlr = "CwmQ9SVWJS2qBAD9/14tCQ=="
+        val binaryDecoder = OpenLRBinaryDecoder()
+        val byteArray = ByteArray(Base64.decode(openlr, Base64.DEFAULT))
+        val locationReferenceBinary = LocationReferenceBinaryImpl("Test location", byteArray)
+        val rawLocationReference = binaryDecoder.decodeData(locationReferenceBinary)
 
+        val points =
+            rawLocationReference.locationReferencePoints.map { Point.fromLngLat(it.longitudeDeg, it.latitudeDeg) }
+
+        mapboxNavigation.requestRoutes(
+            RouteOptions.builder()
+                .applyDefaultNavigationOptions()
+                .applyLanguageAndVoiceUnitOptions(this)
+                .coordinatesList(points)
+                .build(),
+            object : RouterCallback {
+                override fun onRoutesReady(
+                    routes: List<DirectionsRoute>,
+                    routerOrigin: RouterOrigin
+                ) {
+                    mapboxNavigation.setRoutes(routes)
+                }
+
+                override fun onFailure(
+                    reasons: List<RouterFailure>,
+                    routeOptions: RouteOptions
+                ) {
+                    // no impl
+                }
+
+                override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) {
+                    // no impl
+                }
+            }
+        )
     }
 }
