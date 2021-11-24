@@ -187,6 +187,7 @@ class DecodeOpenLRActivity : AppCompatActivity() {
                 .applyDefaultNavigationOptions()
                 .applyLanguageAndVoiceUnitOptions(this)
                 .coordinatesList(points)
+                .waypointIndicesList(listOf(0, points.size - 1))
                 .bearingsList(bearings)
                 .build(),
             object : RouterCallback {
