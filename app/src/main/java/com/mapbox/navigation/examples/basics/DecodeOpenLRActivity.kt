@@ -123,7 +123,6 @@ class DecodeOpenLRActivity : AppCompatActivity() {
                 .accessToken(getString(R.string.mapbox_access_token))
                 .build()
         )
-        mapboxNavigation.startTripSession(withForegroundService = false)
 
         // initialize route line, the withRouteLineBelowLayerId is specified to place
         // the route line below road labels layer on the map
@@ -169,7 +168,7 @@ class DecodeOpenLRActivity : AppCompatActivity() {
     }
 
     private fun decodeRoute() {
-        val openlr = "CwmQ9SVWJS2qBAD9/14tCQ=="
+        val openlr = "C/uS0iXwhRpzC/73/cAbbwQAOv86G2kAACD/+htpBAFe/8UbaQYCNf+xG2kFAYH/YxttKfQX/SgbdTzsC/9FG3ol+tAGJBtvJwA="
         val binaryDecoder = OpenLRBinaryDecoder()
         val byteArray = ByteArray(Base64.decode(openlr, Base64.DEFAULT))
         val locationReferenceBinary = LocationReferenceBinaryImpl("", byteArray)
