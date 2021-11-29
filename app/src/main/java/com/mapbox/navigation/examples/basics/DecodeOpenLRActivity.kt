@@ -3,22 +3,30 @@ package com.mapbox.navigation.examples.basics
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
+import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.mapbox.api.directions.v5.models.Bearing
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
+import com.mapbox.common.TileStore
 import com.mapbox.geojson.Point
+import com.mapbox.maps.MapInitOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.MapboxMap
+import com.mapbox.maps.ResourceOptions
 import com.mapbox.maps.Style
 import com.mapbox.maps.plugin.animation.camera
 import com.mapbox.navigation.base.ExperimentalPreviewMapboxNavigationAPI
 import com.mapbox.navigation.base.extensions.applyDefaultNavigationOptions
 import com.mapbox.navigation.base.extensions.applyLanguageAndVoiceUnitOptions
 import com.mapbox.navigation.base.options.NavigationOptions
+import com.mapbox.navigation.base.options.RoutingTilesOptions
 import com.mapbox.navigation.base.route.RouterCallback
 import com.mapbox.navigation.base.route.RouterFailure
 import com.mapbox.navigation.base.route.RouterOrigin
+import com.mapbox.navigation.base.trip.model.eh.MatchableOpenLr
+import com.mapbox.navigation.base.trip.model.eh.OpenLRStandard.TOM_TOM
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.directions.session.RoutesObserver
@@ -44,6 +52,8 @@ class DecodeOpenLRActivity : AppCompatActivity() {
      * You need to get a new reference to this object whenever the [MapView] is recreated.
      */
     private lateinit var mapboxMap: MapboxMap
+
+    private lateinit var tileStore: TileStore
 
     /**
      * Mapbox Navigation entry point. There should only be one instance of this object for the app.
@@ -115,12 +125,22 @@ class DecodeOpenLRActivity : AppCompatActivity() {
         binding = MapboxActivityOpenLrBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        mapboxMap = binding.mapView.getMapboxMap()
+        tileStore = TileStore.create()
+        val mapboxMapOptions = MapInitOptions(this)
+        val resourceOptions = ResourceOptions.Builder()
+            .accessToken(getString(R.string.mapbox_access_token))
+            .tileStore(tileStore)
+            .build()
+        mapboxMapOptions.resourceOptions = resourceOptions
+        val mapView = MapView(this, mapboxMapOptions)
+        binding.mapViewContainer.addView(mapView)
+        mapboxMap = mapView.getMapboxMap()
 
         // initialize Mapbox Navigation
         mapboxNavigation = MapboxNavigationProvider.create(
             NavigationOptions.Builder(this.applicationContext)
                 .accessToken(getString(R.string.mapbox_access_token))
+                .routingTilesOptions(RoutingTilesOptions.Builder().tileStore(tileStore).build())
                 .build()
         )
 
@@ -138,7 +158,7 @@ class DecodeOpenLRActivity : AppCompatActivity() {
         viewportDataSource = MapboxNavigationViewportDataSource(mapboxMap)
         navigationCamera = NavigationCamera(
             mapboxMap,
-            binding.mapView.camera,
+            mapView.camera,
             viewportDataSource
         )
 
@@ -169,47 +189,64 @@ class DecodeOpenLRActivity : AppCompatActivity() {
 
     private fun decodeRoute() {
         val openlr = "C/uS0iXwhRpzC/73/cAbbwQAOv86G2kAACD/+htpBAFe/8UbaQYCNf+xG2kFAYH/YxttKfQX/SgbdTzsC/9FG3ol+tAGJBtvJwA="
-        val binaryDecoder = OpenLRBinaryDecoder()
-        val byteArray = ByteArray(Base64.decode(openlr, Base64.DEFAULT))
-        val locationReferenceBinary = LocationReferenceBinaryImpl("", byteArray)
-        val rawLocationReference = binaryDecoder.decodeData(locationReferenceBinary)
 
-        val referencePoints = rawLocationReference.locationReferencePoints
-        val points = referencePoints.map {
-            Point.fromLngLat(it.longitudeDeg, it.latitudeDeg)
-        }
-        val bearings = referencePoints.map {
-            Bearing.builder().angle(it.bearing).degrees(10.0).build()
-        }
-
-        mapboxNavigation.requestRoutes(
-            RouteOptions.builder()
-                .applyDefaultNavigationOptions()
-                .applyLanguageAndVoiceUnitOptions(this)
-                .coordinatesList(points)
-                .waypointIndicesList(listOf(0, points.size - 1))
-                .bearingsList(bearings)
-                .build(),
-            object : RouterCallback {
-                override fun onRoutesReady(
-                    routes: List<DirectionsRoute>,
-                    routerOrigin: RouterOrigin
-                ) {
-                    mapboxNavigation.setRoutes(routes)
-                    navigationCamera.requestNavigationCameraToOverview()
-                }
-
-                override fun onFailure(
-                    reasons: List<RouterFailure>,
-                    routeOptions: RouteOptions
-                ) {
-                    // no impl
-                }
-
-                override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) {
-                    // no impl
+        mapboxNavigation.roadObjectMatcher.apply {
+            registerRoadObjectMatcherObserver { result ->
+                if (result.isValue) {
+                    val roadObject = result.value!!
+                } else {
+                    Log.e("DecodeOpenLRActivity", "can't match, ${result.error}")
                 }
             }
-        )
+            matchOpenLRObjects(
+                listOf(
+                    MatchableOpenLr("test", openlr, TOM_TOM)
+                ),
+                useOnlyPreloadedTiles = true
+            )
+        }
+
+//        val binaryDecoder = OpenLRBinaryDecoder()
+//        val byteArray = ByteArray(Base64.decode(openlr, Base64.DEFAULT))
+//        val locationReferenceBinary = LocationReferenceBinaryImpl("", byteArray)
+//        val rawLocationReference = binaryDecoder.decodeData(locationReferenceBinary)
+//
+//        val referencePoints = rawLocationReference.locationReferencePoints
+//        val points = referencePoints.map {
+//            Point.fromLngLat(it.longitudeDeg, it.latitudeDeg)
+//        }
+//        val bearings = referencePoints.map {
+//            Bearing.builder().angle(it.bearing).degrees(10.0).build()
+//        }
+//
+//        mapboxNavigation.requestRoutes(
+//            RouteOptions.builder()
+//                .applyDefaultNavigationOptions()
+//                .applyLanguageAndVoiceUnitOptions(this)
+//                .coordinatesList(points)
+//                .waypointIndicesList(listOf(0, points.size - 1))
+//                .bearingsList(bearings)
+//                .build(),
+//            object : RouterCallback {
+//                override fun onRoutesReady(
+//                    routes: List<DirectionsRoute>,
+//                    routerOrigin: RouterOrigin
+//                ) {
+//                    mapboxNavigation.setRoutes(routes)
+//                    navigationCamera.requestNavigationCameraToOverview()
+//                }
+//
+//                override fun onFailure(
+//                    reasons: List<RouterFailure>,
+//                    routeOptions: RouteOptions
+//                ) {
+//                    // no impl
+//                }
+//
+//                override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) {
+//                    // no impl
+//                }
+//            }
+//        )
     }
 }
