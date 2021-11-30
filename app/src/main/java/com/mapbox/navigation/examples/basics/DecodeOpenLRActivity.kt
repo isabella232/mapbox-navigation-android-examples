@@ -1,11 +1,13 @@
 package com.mapbox.navigation.examples.basics
 
 import android.annotation.SuppressLint
+import android.location.Location
 import android.os.Bundle
 import android.util.Base64
 import android.util.Log
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.mapbox.api.directions.v5.models.Bearing
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
@@ -18,6 +20,7 @@ import com.mapbox.common.TilesetDescriptor
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.GeoJson
 import com.mapbox.geojson.Geometry
+import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
 import com.mapbox.geojson.Polygon
 import com.mapbox.maps.MapInitOptions
@@ -27,7 +30,9 @@ import com.mapbox.maps.OfflineManager
 import com.mapbox.maps.ResourceOptions
 import com.mapbox.maps.Style
 import com.mapbox.maps.TilesetDescriptorOptions
+import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.animation.camera
+import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.navigation.base.ExperimentalPreviewMapboxNavigationAPI
 import com.mapbox.navigation.base.extensions.applyDefaultNavigationOptions
 import com.mapbox.navigation.base.extensions.applyLanguageAndVoiceUnitOptions
@@ -41,11 +46,14 @@ import com.mapbox.navigation.base.trip.model.eh.OpenLRStandard.TOM_TOM
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.directions.session.RoutesObserver
+import com.mapbox.navigation.core.trip.session.LocationMatcherResult
+import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.core.trip.session.eh.RoadObjectMatcher
 import com.mapbox.navigation.examples.R
 import com.mapbox.navigation.examples.databinding.MapboxActivityOpenLrBinding
 import com.mapbox.navigation.ui.maps.camera.NavigationCamera
 import com.mapbox.navigation.ui.maps.camera.data.MapboxNavigationViewportDataSource
+import com.mapbox.navigation.ui.maps.location.NavigationLocationProvider
 import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineApi
 import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineView
 import com.mapbox.navigation.ui.maps.route.line.model.MapboxRouteLineOptions
@@ -56,6 +64,22 @@ import openlr.binary.impl.LocationReferenceBinaryImpl
 
 @OptIn(ExperimentalPreviewMapboxNavigationAPI::class)
 class DecodeOpenLRActivity : AppCompatActivity() {
+
+    private val navigationLocationProvider = NavigationLocationProvider()
+
+    private val locationObserver = object : LocationObserver {
+
+        override fun onNewRawLocation(rawLocation: Location) {
+        }
+
+        override fun onNewLocationMatcherResult(locationMatcherResult: LocationMatcherResult) {
+            val enhancedLocation = locationMatcherResult.enhancedLocation
+            navigationLocationProvider.changePosition(
+                enhancedLocation,
+                locationMatcherResult.keyPoints,
+            )
+        }
+    }
 
     private lateinit var binding: MapboxActivityOpenLrBinding
 
@@ -165,19 +189,27 @@ class DecodeOpenLRActivity : AppCompatActivity() {
         mapboxMap = mapView.getMapboxMap()
         offlineManager = OfflineManager(resourceOptions)
 
+
+        mapView.location.apply {
+            setLocationProvider(navigationLocationProvider)
+            enabled = true
+        }
+
         // initialize Mapbox Navigation
         mapboxNavigation = MapboxNavigationProvider.create(
             NavigationOptions.Builder(this.applicationContext)
                 .accessToken(mapboxToken)
                 .routingTilesOptions(
                     RoutingTilesOptions.Builder()
-                    .tileStore(tileStore)
-                    .filePath(tilesPath)
-                    .tilesVersion(tilesVersion)
-                    .build()
+                        .tileStore(tileStore)
+                        .tilesVersion(tilesVersion)
+                        .build()
                 )
                 .build()
-        )
+        ).apply {
+            registerLocationObserver(locationObserver)
+            startTripSession(false)
+        }
 
         // initialize route line, the withRouteLineBelowLayerId is specified to place
         // the route line below road labels layer on the map
@@ -223,12 +255,12 @@ class DecodeOpenLRActivity : AppCompatActivity() {
     }
 
     private fun decodeRoute() {
-        val openlr =
-            "C/uS0iXwhRpzC/73/cAbbwQAOv86G2kAACD/+htpBAFe/8UbaQYCNf+xG2kFAYH/YxttKfQX/SgbdTzsC/9FG3ol+tAGJBtvJwA="
+        val openlr = "CwmQ9SVWJS2qBAD9/14tCQ=="
+        // "C/uS0iXwhRpzC/73/cAbbwQAOv86G2kAACD/+htpBAFe/8UbaQYCNf+xG2kFAYH/YxttKfQX/SgbdTzsC/9FG3ol+tAGJBtvJwA="
 
-        //buildViaMapMatching(openlr)
+        buildViaMapMatching(openlr)
 
-        buildUsingLrps(openlr)
+        //buildUsingLrps(openlr)
     }
 
     private fun buildUsingLrps(openlrText: String) {
@@ -245,6 +277,10 @@ class DecodeOpenLRActivity : AppCompatActivity() {
             Bearing.builder().angle(it.bearing).degrees(10.0).build()
         }
 
+        buildRoute(points, bearings)
+    }
+
+    private fun buildRoute(points: List<Point>, bearings: List<Bearing>? = null) {
         mapboxNavigation.requestRoutes(
             RouteOptions.builder()
                 .applyDefaultNavigationOptions()
@@ -278,10 +314,11 @@ class DecodeOpenLRActivity : AppCompatActivity() {
 
     private fun buildViaMapMatching(openlr: String) {
         val navigationDescription = mapboxNavigation.tilesetDescriptorFactory.getSpecificVersion(tilesVersion)
+        // map matching doesn't work with loaded tiles, only with ambient cache
         tileStore.loadTileRegion(
-            "dublin",
+            "berlin",
             TileRegionLoadOptions.Builder()
-                .geometry(FeatureCollection.fromJson(DUBLIN).features()!![0].geometry())
+                .geometry(FeatureCollection.fromJson(BERLIN).features()!![0].geometry())
                 .descriptors(listOf(navigationDescription))
                 .build(),
             {
@@ -294,27 +331,34 @@ class DecodeOpenLRActivity : AppCompatActivity() {
                 return@loadTileRegion
             }
 
-            mapboxNavigation.roadObjectMatcher.apply {
-                registerRoadObjectMatcherObserver { result ->
-                    if (result.isValue) {
-                        val roadObject = result.value!!
+            val roadMatcher = mapboxNavigation.roadObjectMatcher
+            roadMatcher.registerRoadObjectMatcherObserver { result ->
+                if (result.isValue) {
+                    val roadObject = result.value!!
+                    val shape = roadObject.location.shape as? LineString
+                    if (shape != null) {
+                        val points = shape.coordinates()
+                        buildRoute(points)
                     } else {
-                        Log.e("DecodeOpenLRActivity", "can't match, ${result.error}")
+                        Log.e("DecodeOpenLRActivity", "matched road object isn't a line")
                     }
+                } else {
+                    Log.e("DecodeOpenLRActivity", "can't match, ${result.error}")
                 }
-                matchOpenLRObjects(
-                    listOf(
-                        MatchableOpenLr("open-lr-example", openlr, TOM_TOM)
-                    ),
-                    useOnlyPreloadedTiles = true
-                )
             }
+            roadMatcher.matchOpenLRObjects(
+                listOf(
+                    MatchableOpenLr("open-lr-example", openlr, TOM_TOM)
+                ),
+                useOnlyPreloadedTiles = false
+            )
+
         }
     }
 }
 
 
-private val DUBLIN = "{\n" +
+private val BERLIN = "{\n" +
         "  \"type\": \"FeatureCollection\",\n" +
         "  \"features\": [\n" +
         "    {\n" +
@@ -325,24 +369,24 @@ private val DUBLIN = "{\n" +
         "        \"coordinates\": [\n" +
         "          [\n" +
         "            [\n" +
-        "              -6.756591796875,\n" +
-        "              53.07092720421678\n" +
+        "              13.121795654296875,\n" +
+        "              52.32526831457077\n" +
         "            ],\n" +
         "            [\n" +
-        "              -5.6085205078125,\n" +
-        "              53.07092720421678\n" +
+        "              13.77685546875,\n" +
+        "              52.32526831457077\n" +
         "            ],\n" +
         "            [\n" +
-        "              -5.6085205078125,\n" +
-        "              53.60391440806693\n" +
+        "              13.77685546875,\n" +
+        "              52.65222859561964\n" +
         "            ],\n" +
         "            [\n" +
-        "              -6.756591796875,\n" +
-        "              53.60391440806693\n" +
+        "              13.121795654296875,\n" +
+        "              52.65222859561964\n" +
         "            ],\n" +
         "            [\n" +
-        "              -6.756591796875,\n" +
-        "              53.07092720421678\n" +
+        "              13.121795654296875,\n" +
+        "              52.32526831457077\n" +
         "            ]\n" +
         "          ]\n" +
         "        ]\n" +
