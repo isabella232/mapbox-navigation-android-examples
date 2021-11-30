@@ -41,6 +41,7 @@ import com.mapbox.navigation.base.trip.model.eh.OpenLRStandard.TOM_TOM
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.directions.session.RoutesObserver
+import com.mapbox.navigation.core.trip.session.eh.RoadObjectMatcher
 import com.mapbox.navigation.examples.R
 import com.mapbox.navigation.examples.databinding.MapboxActivityOpenLrBinding
 import com.mapbox.navigation.ui.maps.camera.NavigationCamera
@@ -131,6 +132,8 @@ class DecodeOpenLRActivity : AppCompatActivity() {
         }
     }
 
+    private val tilesVersion = "2021_11_27-03_00_00"
+
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -138,7 +141,8 @@ class DecodeOpenLRActivity : AppCompatActivity() {
         setContentView(binding.root)
         val mapboxToken = getString(R.string.mapbox_access_token)
 
-        tileStore = TileStore.create().apply {
+        val tilesPath = filesDir.path + "/test123"
+        tileStore = TileStore.create(tilesPath).apply {
             setOption(
                 TileStoreOptions.MAPBOX_ACCESS_TOKEN,
                 TileDataDomain.MAPS,
@@ -165,7 +169,13 @@ class DecodeOpenLRActivity : AppCompatActivity() {
         mapboxNavigation = MapboxNavigationProvider.create(
             NavigationOptions.Builder(this.applicationContext)
                 .accessToken(mapboxToken)
-                .routingTilesOptions(RoutingTilesOptions.Builder().tileStore(tileStore).build())
+                .routingTilesOptions(
+                    RoutingTilesOptions.Builder()
+                    .tileStore(tileStore)
+                    .filePath(tilesPath)
+                    .tilesVersion(tilesVersion)
+                    .build()
+                )
                 .build()
         )
 
@@ -218,7 +228,7 @@ class DecodeOpenLRActivity : AppCompatActivity() {
 
         buildViaMapMatching(openlr)
 
-        buildUsingLrps(openlr)
+        //buildUsingLrps(openlr)
     }
 
     private fun buildUsingLrps(openlrText: String) {
@@ -267,7 +277,7 @@ class DecodeOpenLRActivity : AppCompatActivity() {
     }
 
     private fun buildViaMapMatching(openlr: String) {
-        val navigationDescription = mapboxNavigation.tilesetDescriptorFactory.getLatest()
+        val navigationDescription = mapboxNavigation.tilesetDescriptorFactory.getSpecificVersion(tilesVersion)
         tileStore.loadTileRegion(
             "dublin",
             TileRegionLoadOptions.Builder()
