@@ -226,9 +226,9 @@ class DecodeOpenLRActivity : AppCompatActivity() {
         val openlr =
             "C/uS0iXwhRpzC/73/cAbbwQAOv86G2kAACD/+htpBAFe/8UbaQYCNf+xG2kFAYH/YxttKfQX/SgbdTzsC/9FG3ol+tAGJBtvJwA="
 
-        buildViaMapMatching(openlr)
+        //buildViaMapMatching(openlr)
 
-        //buildUsingLrps(openlr)
+        buildUsingLrps(openlr)
     }
 
     private fun buildUsingLrps(openlrText: String) {
