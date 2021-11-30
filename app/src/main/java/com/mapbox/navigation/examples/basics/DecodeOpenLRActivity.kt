@@ -46,6 +46,7 @@ import com.mapbox.navigation.base.trip.model.eh.OpenLRStandard.TOM_TOM
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.MapboxNavigationProvider
 import com.mapbox.navigation.core.directions.session.RoutesObserver
+import com.mapbox.navigation.core.replay.route.ReplayRouteMapper
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.core.trip.session.eh.RoadObjectMatcher
@@ -208,7 +209,16 @@ class DecodeOpenLRActivity : AppCompatActivity() {
                 .build()
         ).apply {
             registerLocationObserver(locationObserver)
-            startTripSession(false)
+            startReplayTripSession()
+            mapboxReplayer.pushEvents(
+                listOf(
+                    ReplayRouteMapper.mapToUpdateLocation(
+                        eventTimestamp = 0.0,
+                        point = Point.fromLngLat(13.453621004080377, 52.504042844412695)
+                    )
+                )
+            )
+            mapboxReplayer.playFirstLocation()
         }
 
         // initialize route line, the withRouteLineBelowLayerId is specified to place
