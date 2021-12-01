@@ -207,19 +207,7 @@ class DecodeOpenLRActivity : AppCompatActivity() {
                         .build()
                 )
                 .build()
-        ).apply {
-            registerLocationObserver(locationObserver)
-            startReplayTripSession()
-            mapboxReplayer.pushEvents(
-                listOf(
-                    ReplayRouteMapper.mapToUpdateLocation(
-                        eventTimestamp = 0.0,
-                        point = Point.fromLngLat(13.453621004080377, 52.504042844412695)
-                    )
-                )
-            )
-            mapboxReplayer.playFirstLocation()
-        }
+        )
 
         // initialize route line, the withRouteLineBelowLayerId is specified to place
         // the route line below road labels layer on the map
@@ -265,15 +253,15 @@ class DecodeOpenLRActivity : AppCompatActivity() {
     }
 
     private fun decodeRoute() {
-        val openlr = "CwmQ9SVWJS2qBAD9/14tCQ=="
-        // "C/uS0iXwhRpzC/73/cAbbwQAOv86G2kAACD/+htpBAFe/8UbaQYCNf+xG2kFAYH/YxttKfQX/SgbdTzsC/9FG3ol+tAGJBtvJwA="
-
-        buildViaMapMatching(openlr)
-
-        //buildUsingLrps(openlr)
+        //buildViaMapMatching()
+        buildUsingLrps()
     }
 
-    private fun buildUsingLrps(openlrText: String) {
+    private fun buildUsingLrps() {
+        val openlrText =
+            "C/uS0iXwhRpzC/73/cAbbwQAOv86G2kAACD/+htpBAFe/8UbaQYCNf+xG2kFAYH/YxttKfQX/SgbdTzsC/9FG3ol+tAGJBtvJwA="
+        //"C1ZAJBE5bxNQ//RGDFITQA4A5wHdE2nk/w=="
+
         val binaryDecoder = OpenLRBinaryDecoder()
         val byteArray = openlr.binary.ByteArray(Base64.decode(openlrText, Base64.DEFAULT))
         val locationReferenceBinary = LocationReferenceBinaryImpl("", byteArray)
@@ -322,7 +310,22 @@ class DecodeOpenLRActivity : AppCompatActivity() {
         )
     }
 
-    private fun buildViaMapMatching(openlr: String) {
+    private fun buildViaMapMatching() {
+        mapboxNavigation.apply {
+            registerLocationObserver(locationObserver)
+            startReplayTripSession()
+            mapboxReplayer.pushEvents(
+                listOf(
+                    ReplayRouteMapper.mapToUpdateLocation(
+                        eventTimestamp = 0.0,
+                        point = Point.fromLngLat(13.453621004080377, 52.504042844412695)
+                    )
+                )
+            )
+            mapboxReplayer.playFirstLocation()
+        }
+
+        val openlr = "CwmQ9SVWJS2qBAD9/14tCQ=="
         val navigationDescription = mapboxNavigation.tilesetDescriptorFactory.getSpecificVersion(tilesVersion)
         // map matching doesn't work with loaded tiles, only with ambient cache
         tileStore.loadTileRegion(
