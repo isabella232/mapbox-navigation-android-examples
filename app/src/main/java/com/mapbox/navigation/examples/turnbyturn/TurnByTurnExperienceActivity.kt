@@ -586,6 +586,8 @@ class TurnByTurnExperienceActivity : AppCompatActivity() {
             )
             mapboxReplayer.playFirstLocation()
         }
+
+        navigationCamera.resetFrame()
     }
 
     override fun onStop() {
