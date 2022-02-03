@@ -58,4 +58,11 @@
   <!-- Custom Arrival Building Extrusions -->
   <string name="title_building_extrusions_custom_arrival">Render building extrusion based on custom arrival criteria.</string>
   <string name="description_building_extrusions_custom_arrival">Use the example to render building extrusions on arrival using building API and MapboxBuildingView.</string>
+
+  <!-- Status -->
+  <string name="title_show_status">Show status messages</string>
+  <string name="description_show_status">Learn how to use MapboxStatusView to show status messages.</string>
+  <string name="title_show_custom_status">Show customized status messages</string>
+  <string name="description_show_custom_status">Learn how to customize MapboxStatusView to match your application theme.</string>
+
 </resources>

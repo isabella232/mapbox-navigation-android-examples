@@ -1,0 +1,45 @@
+package com.mapbox.navigation.examples.basics
+
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import com.mapbox.maps.Style
+import com.mapbox.maps.plugin.gestures.OnMapClickListener
+import com.mapbox.maps.plugin.gestures.gestures
+import com.mapbox.maps.plugin.scalebar.scalebar
+import com.mapbox.navigation.base.ExperimentalMapboxNavigationAPI
+import com.mapbox.navigation.examples.databinding.MapboxActivityShowStatusBinding
+import com.mapbox.navigation.ui.status.model.StatusFactory
+import com.mapbox.navigation.ui.voice.R as Mapbox_R
+
+@OptIn(ExperimentalMapboxNavigationAPI::class)
+class ShowStatusActivity : AppCompatActivity() {
+
+    private lateinit var binding: MapboxActivityShowStatusBinding
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = MapboxActivityShowStatusBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        binding.mapView.apply {
+            scalebar.enabled = false
+            gestures.addOnMapClickListener(onMapClickListener)
+            getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS)
+        }
+    }
+
+    private fun showStatusMessage() {
+        val status = StatusFactory.buildStatus(
+            message = "Voice instructions OFF",
+            duration = 2000,
+            icon = Mapbox_R.drawable.mapbox_ic_sound_off
+        )
+        binding.statusView.render(status)
+    }
+
+    private val onMapClickListener = OnMapClickListener {
+        // show status message on map click
+        showStatusMessage()
+        false
+    }
+}

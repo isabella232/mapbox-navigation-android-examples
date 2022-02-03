@@ -21,8 +21,10 @@ import com.mapbox.navigation.examples.basics.RenderRouteLineActivity
 import com.mapbox.navigation.examples.basics.ShowBuildingExtrusionsActivity
 import com.mapbox.navigation.examples.basics.ShowCameraTransitionsActivity
 import com.mapbox.navigation.examples.basics.ShowCurrentLocationActivity
+import com.mapbox.navigation.examples.basics.ShowCustomStatusActivity
 import com.mapbox.navigation.examples.basics.ShowManeuversActivity
 import com.mapbox.navigation.examples.basics.ShowSpeedLimitActivity
+import com.mapbox.navigation.examples.basics.ShowStatusActivity
 import com.mapbox.navigation.examples.basics.ShowTripProgressActivity
 import com.mapbox.navigation.examples.basics.TurnByTurnExperienceActivity
 import com.mapbox.navigation.examples.databinding.ActivityMainBinding
@@ -191,6 +193,24 @@ class MainActivity : AppCompatActivity(), PermissionsListener {
                 getString(R.string.title_building_extrusions_custom_arrival),
                 getString(R.string.description_building_extrusions_custom_arrival),
                 CustomArrivalActivity::class.java
+            ),
+            MapboxExample(
+                ContextCompat.getDrawable(
+                    this,
+                    R.drawable.mapbox_screenshot_status_basic
+                ),
+                getString(R.string.title_show_status),
+                getString(R.string.description_show_status),
+                ShowStatusActivity::class.java
+            ),
+            MapboxExample(
+                ContextCompat.getDrawable(
+                    this,
+                    R.drawable.mapbox_screenshot_status_custom
+                ),
+                getString(R.string.title_show_custom_status),
+                getString(R.string.description_show_custom_status),
+                ShowCustomStatusActivity::class.java
             )
         )
     }
