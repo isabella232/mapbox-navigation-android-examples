@@ -11,6 +11,12 @@ import com.mapbox.navigation.examples.databinding.MapboxActivityShowCustomStatus
 import com.mapbox.navigation.ui.status.model.StatusFactory.buildStatus as status
 import com.mapbox.navigation.ui.voice.R as Mapbox_R
 
+/**
+ * In this example you can learn how to customize [MapboxStatusView] and use it to show
+ * different types of [Status] messages.
+ *
+ * You can cycle through status messages by tapping anywhere on the map.
+ */
 @OptIn(ExperimentalMapboxNavigationAPI::class)
 class ShowCustomStatusActivity : AppCompatActivity() {
 

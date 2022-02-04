@@ -11,6 +11,10 @@ import com.mapbox.navigation.examples.databinding.MapboxActivityShowStatusBindin
 import com.mapbox.navigation.ui.status.model.StatusFactory
 import com.mapbox.navigation.ui.voice.R as Mapbox_R
 
+/**
+ * In this example you can learn how to use [MapboxStatusView] to show a [Status] message
+ * after tapping anywhere on the map.
+ */
 @OptIn(ExperimentalMapboxNavigationAPI::class)
 class ShowStatusActivity : AppCompatActivity() {
 
