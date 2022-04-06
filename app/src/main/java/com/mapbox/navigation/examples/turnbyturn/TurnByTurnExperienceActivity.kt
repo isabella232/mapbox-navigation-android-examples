@@ -3,6 +3,8 @@ package com.mapbox.navigation.examples.turnbyturn
 import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.location.Location
 import android.os.Bundle
 import android.view.View
@@ -588,6 +590,16 @@ class TurnByTurnExperienceActivity : AppCompatActivity() {
         }
 
         navigationCamera.resetFrame()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.mapView.foreground = null
+    }
+
+    override fun onPause() {
+        binding.mapView.foreground = ColorDrawable(Color.WHITE)
+        super.onPause()
     }
 
     override fun onStop() {
